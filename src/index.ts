@@ -9,6 +9,7 @@ import messageRoutes from './routes/messages';
 import dmRoutes from './routes/dms';
 import notificationRoutes from './routes/notifications';
 import searchRoutes from './routes/search';
+import fileRoutes from './routes/files';
 import { setupSocketServer } from './socket';
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/messages', messageRoutes);
 app.use('/dms', dmRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/search', searchRoutes);
+app.use('/files', fileRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

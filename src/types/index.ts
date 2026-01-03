@@ -136,6 +136,28 @@ export interface NotificationPreferences {
   desktop: boolean;
 }
 
+// File types
+export interface FileUpload {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  uploaderId: string;
+  channelId?: string;
+  dmId?: string;
+  messageId?: string;
+  createdAt: Date;
+}
+
+export interface MessageAttachment {
+  fileId: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  url: string;
+}
+
 // WebSocket event types - Client to Server
 export interface ClientToServerEvents {
   'channel:join': (data: { channelId: string }) => void;
