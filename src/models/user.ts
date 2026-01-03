@@ -96,3 +96,11 @@ export function sanitizeUser(user: User): Omit<User, 'passwordHash'> {
   const { passwordHash, ...safeUser } = user;
   return safeUser;
 }
+
+// Test utility: clear all in-memory data
+export function clearAllData(): void {
+  users.clear();
+  usersByEmail.clear();
+  usersByUsername.clear();
+  refreshTokens.clear();
+}
