@@ -2,12 +2,13 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
-import { findUserById, updateUser } from '../models/user';
+import { findUserById, updateUser, sanitizeUser } from '../models/user';
 import { findChannelById, isMember } from '../models/channel';
 import { createMessage, getChannelMessages } from '../models/message';
 import { findDMById, isParticipant, createDMMessage, getDMMessages } from '../models/dm';
 import { notifyDM, notifyMention, getUnreadCount } from '../models/notification';
-import { TokenPayload, User, Message, Notification } from '../types';
+import { getFileById, attachFileToMessage } from '../models/file';
+import { TokenPayload, User, Message, Notification, FileUpload } from '../types';
 
 interface AuthenticatedSocket extends Socket {
   user?: User;
@@ -136,10 +137,11 @@ export function setupSocketServer(httpServer: HttpServer): Server {
     });
 
     // Send a message
-    socket.on('message:send', async (data: { channelId: string; content: string }) => {
+    socket.on('message:send', async (data: { channelId: string; content: string; fileIds?: string[] }) => {
       try {
-        if (!data.content || data.content.trim().length === 0) {
-          socket.emit('error', { message: 'Message content required' });
+        // Allow empty content if there are files attached
+        if ((!data.content || data.content.trim().length === 0) && (!data.fileIds || data.fileIds.length === 0)) {
+          socket.emit('error', { message: 'Message content or files required' });
           return;
         }
 
@@ -159,11 +161,33 @@ export function setupSocketServer(httpServer: HttpServer): Server {
         const message = await createMessage({
           channelId: data.channelId,
           userId: user.id,
-          content: data.content.trim(),
+          content: data.content?.trim() || '',
         });
 
+        // Attach files to message if provided
+        const files: FileUpload[] = [];
+        if (data.fileIds && data.fileIds.length > 0) {
+          for (const fileId of data.fileIds) {
+            const file = await getFileById(fileId);
+            if (file && file.uploaderId === user.id) {
+              await attachFileToMessage(fileId, message.id);
+              files.push({
+                ...file,
+                url: `/files/${file.id}/download`,
+              } as FileUpload);
+            }
+          }
+        }
+
+        // Include user info and files in the broadcast
+        const messageWithUser = {
+          ...message,
+          user: sanitizeUser(user),
+          files: files.length > 0 ? files : undefined,
+        };
+
         // Broadcast to all users in the channel (including sender)
-        io.to(`channel:${data.channelId}`).emit('message:new', message);
+        io.to(`channel:${data.channelId}`).emit('message:new', messageWithUser);
       } catch (error) {
         socket.emit('error', { message: 'Failed to send message' });
       }
@@ -220,10 +244,11 @@ export function setupSocketServer(httpServer: HttpServer): Server {
     });
 
     // DM: Send a message
-    socket.on('dm:send', async (data: { dmId: string; content: string }) => {
+    socket.on('dm:send', async (data: { dmId: string; content: string; fileIds?: string[] }) => {
       try {
-        if (!data.content || data.content.trim().length === 0) {
-          socket.emit('error', { message: 'Message content required' });
+        // Allow empty content if there are files attached
+        if ((!data.content || data.content.trim().length === 0) && (!data.fileIds || data.fileIds.length === 0)) {
+          socket.emit('error', { message: 'Message content or files required' });
           return;
         }
 
@@ -242,19 +267,42 @@ export function setupSocketServer(httpServer: HttpServer): Server {
         const message = await createDMMessage({
           dmId: data.dmId,
           userId: user.id,
-          content: data.content.trim(),
+          content: data.content?.trim() || '',
         });
 
+        // Attach files to message if provided
+        const files: FileUpload[] = [];
+        if (data.fileIds && data.fileIds.length > 0) {
+          for (const fileId of data.fileIds) {
+            const file = await getFileById(fileId);
+            if (file && file.uploaderId === user.id) {
+              await attachFileToMessage(fileId, message.id);
+              files.push({
+                ...file,
+                url: `/files/${file.id}/download`,
+              } as FileUpload);
+            }
+          }
+        }
+
+        // Include user info and files in the broadcast
+        const messageWithUser = {
+          ...message,
+          user: sanitizeUser(user),
+          files: files.length > 0 ? files : undefined,
+        };
+
         // Broadcast to all participants in the DM
-        io.to(`dm:${data.dmId}`).emit('dm:new', message);
+        io.to(`dm:${data.dmId}`).emit('dm:new', messageWithUser);
 
         // Send notifications to other participants
+        const notificationContent = data.content?.trim() || (files.length > 0 ? `sent ${files.length} file(s)` : '');
         for (const participantId of dm.participantIds) {
           if (participantId !== user.id) {
             const notification = await notifyDM(
               participantId,
               user.displayName,
-              data.content.trim(),
+              notificationContent,
               { dmId: data.dmId, messageId: message.id, senderId: user.id }
             );
             if (notification) {
