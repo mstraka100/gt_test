@@ -85,6 +85,31 @@ export interface CreateMessageInput {
   content: string;
 }
 
+// Direct Message types
+export interface DirectMessage {
+  id: string;
+  type: 'dm' | 'group_dm';
+  participantIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  lastMessageAt?: Date;
+}
+
+export interface DMMessage {
+  id: string;
+  dmId: string;
+  userId: string;
+  content: string;
+  type: 'text' | 'system';
+  createdAt: Date;
+  updatedAt: Date;
+  editedAt?: Date;
+}
+
+export interface CreateDMInput {
+  participantIds: string[];
+}
+
 // WebSocket event types - Client to Server
 export interface ClientToServerEvents {
   'channel:join': (data: { channelId: string }) => void;

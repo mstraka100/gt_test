@@ -5,6 +5,7 @@ import { config } from '../config';
 import { findUserById, updateUser } from '../models/user';
 import { findChannelById, isMember } from '../models/channel';
 import { createMessage, getChannelMessages } from '../models/message';
+import { findDMById, isParticipant, createDMMessage, getDMMessages } from '../models/dm';
 import { TokenPayload, User, Message } from '../types';
 
 interface AuthenticatedSocket extends Socket {
@@ -154,6 +155,77 @@ export function setupSocketServer(httpServer: HttpServer): Server {
 
       await updateUser(user.id, { status: data.status });
       io.emit('presence:changed', { userId: user.id, status: data.status });
+    });
+
+    // DM: Join a DM room
+    socket.on('dm:join', async (data: { dmId: string }) => {
+      try {
+        const dm = await findDMById(data.dmId);
+        if (!dm) {
+          socket.emit('error', { message: 'DM not found' });
+          return;
+        }
+
+        const participant = await isParticipant(data.dmId, user.id);
+        if (!participant) {
+          socket.emit('error', { message: 'Access denied' });
+          return;
+        }
+
+        socket.join(`dm:${data.dmId}`);
+
+        // Send recent messages
+        const messages = await getDMMessages(data.dmId, 50);
+        socket.emit('dm:history', { dmId: data.dmId, messages });
+      } catch (error) {
+        socket.emit('error', { message: 'Failed to join DM' });
+      }
+    });
+
+    // DM: Leave a DM room
+    socket.on('dm:leave', (data: { dmId: string }) => {
+      socket.leave(`dm:${data.dmId}`);
+    });
+
+    // DM: Send a message
+    socket.on('dm:send', async (data: { dmId: string; content: string }) => {
+      try {
+        if (!data.content || data.content.trim().length === 0) {
+          socket.emit('error', { message: 'Message content required' });
+          return;
+        }
+
+        const dm = await findDMById(data.dmId);
+        if (!dm) {
+          socket.emit('error', { message: 'DM not found' });
+          return;
+        }
+
+        const participant = await isParticipant(data.dmId, user.id);
+        if (!participant) {
+          socket.emit('error', { message: 'Access denied' });
+          return;
+        }
+
+        const message = await createDMMessage({
+          dmId: data.dmId,
+          userId: user.id,
+          content: data.content.trim(),
+        });
+
+        // Broadcast to all participants in the DM
+        io.to(`dm:${data.dmId}`).emit('dm:new', message);
+      } catch (error) {
+        socket.emit('error', { message: 'Failed to send message' });
+      }
+    });
+
+    // DM: Typing indicator
+    socket.on('dm:typing', (data: { dmId: string }) => {
+      socket.to(`dm:${data.dmId}`).emit('dm:typing', {
+        dmId: data.dmId,
+        userId: user.id,
+      });
     });
 
     // Disconnect
