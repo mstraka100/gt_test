@@ -1,11 +1,17 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import { config } from './config';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import channelRoutes from './routes/channels';
+import { setupSocketServer } from './socket';
 
 const app = express();
+const httpServer = createServer(app);
+
+// Setup WebSocket server
+const io = setupSocketServer(httpServer);
 
 // Middleware
 app.use(cors());
@@ -22,8 +28,10 @@ app.get('/health', (req, res) => {
 });
 
 // Start server
-app.listen(config.port, () => {
+httpServer.listen(config.port, () => {
   console.log(`Server running on port ${config.port}`);
+  console.log(`WebSocket server ready`);
 });
 
+export { app, io };
 export default app;

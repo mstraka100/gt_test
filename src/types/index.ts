@@ -67,3 +67,40 @@ export interface ChannelMember {
   role: 'owner' | 'admin' | 'member';
   joinedAt: Date;
 }
+
+// Message types
+export interface Message {
+  id: string;
+  channelId: string;
+  userId: string;
+  content: string;
+  type: 'text' | 'system';
+  createdAt: Date;
+  updatedAt: Date;
+  editedAt?: Date;
+}
+
+export interface CreateMessageInput {
+  channelId: string;
+  content: string;
+}
+
+// WebSocket event types - Client to Server
+export interface ClientToServerEvents {
+  'channel:join': (data: { channelId: string }) => void;
+  'channel:leave': (data: { channelId: string }) => void;
+  'message:send': (data: { channelId: string; content: string }) => void;
+  'message:typing': (data: { channelId: string }) => void;
+  'presence:update': (data: { status: User['status'] }) => void;
+}
+
+// WebSocket event types - Server to Client
+export interface ServerToClientEvents {
+  'channel:joined': (data: { channelId: string; userId: string }) => void;
+  'channel:left': (data: { channelId: string; userId: string }) => void;
+  'channel:history': (data: { channelId: string; messages: Message[] }) => void;
+  'message:new': (message: Message) => void;
+  'message:typing': (data: { channelId: string; userId: string }) => void;
+  'presence:changed': (data: { userId: string; status: User['status'] }) => void;
+  'error': (data: { message: string }) => void;
+}
