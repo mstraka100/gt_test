@@ -5,6 +5,7 @@ import { config } from './config';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import channelRoutes from './routes/channels';
+import messageRoutes from './routes/messages';
 import { setupSocketServer } from './socket';
 
 const app = express();
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/channels', channelRoutes);
+app.use('/messages', messageRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
