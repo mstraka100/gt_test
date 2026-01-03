@@ -1,6 +1,46 @@
 import { formatDistanceToNow } from 'date-fns';
 import type { Message, DMMessage } from '../../types';
 
+// URL regex pattern - matches http://, https://, and www. URLs
+const URL_REGEX = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+
+// Parse text and convert URLs to clickable links
+function renderWithLinks(content: string): React.ReactNode {
+  const parts = content.split(URL_REGEX);
+  const matches = content.match(URL_REGEX) || [];
+
+  if (matches.length === 0) {
+    return content;
+  }
+
+  const result: React.ReactNode[] = [];
+  let matchIndex = 0;
+
+  parts.forEach((part, index) => {
+    if (part === matches[matchIndex]) {
+      // This part is a URL
+      const url = part.startsWith('www.') ? `https://${part}` : part;
+      result.push(
+        <a
+          key={index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 hover:underline"
+        >
+          {part}
+        </a>
+      );
+      matchIndex++;
+    } else if (part) {
+      // Regular text
+      result.push(part);
+    }
+  });
+
+  return result;
+}
+
 interface Props {
   message: Message | DMMessage;
   showAvatar?: boolean;
@@ -35,7 +75,7 @@ export function MessageItem({ message, showAvatar = true }: Props) {
           </div>
         )}
         <div className="text-sm whitespace-pre-wrap break-words" style={{ color: 'var(--slack-text)' }}>
-          {message.content}
+          {renderWithLinks(message.content)}
         </div>
       </div>
     </div>
