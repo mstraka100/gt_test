@@ -15,6 +15,41 @@ export interface TokenPayload {
   email: string;
 }
 
+// Workspace types (multi-tenant support)
+export interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  ownerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WorkspaceMember {
+  workspaceId: string;
+  userId: string;
+  role: 'owner' | 'admin' | 'member';
+  joinedAt: Date;
+}
+
+export interface CreateWorkspaceInput {
+  name: string;
+  slug?: string;
+  description?: string;
+}
+
+export interface UpdateWorkspaceInput {
+  name?: string;
+  description?: string;
+}
+
+export interface InviteToWorkspaceInput {
+  email?: string;
+  userId?: string;
+  role?: WorkspaceMember['role'];
+}
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
