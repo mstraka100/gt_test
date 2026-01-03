@@ -7,6 +7,7 @@ import userRoutes from './routes/users';
 import channelRoutes from './routes/channels';
 import messageRoutes from './routes/messages';
 import dmRoutes from './routes/dms';
+import notificationRoutes from './routes/notifications';
 import { setupSocketServer } from './socket';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/users', userRoutes);
 app.use('/channels', channelRoutes);
 app.use('/messages', messageRoutes);
 app.use('/dms', dmRoutes);
+app.use('/notifications', notificationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

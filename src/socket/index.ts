@@ -6,7 +6,8 @@ import { findUserById, updateUser } from '../models/user';
 import { findChannelById, isMember } from '../models/channel';
 import { createMessage, getChannelMessages } from '../models/message';
 import { findDMById, isParticipant, createDMMessage, getDMMessages } from '../models/dm';
-import { TokenPayload, User, Message } from '../types';
+import { notifyDM, notifyMention, getUnreadCount } from '../models/notification';
+import { TokenPayload, User, Message, Notification } from '../types';
 
 interface AuthenticatedSocket extends Socket {
   user?: User;
@@ -15,6 +16,34 @@ interface AuthenticatedSocket extends Socket {
 // Track online users and their sockets
 const userSockets: Map<string, Set<string>> = new Map(); // userId -> Set of socketIds
 
+// Store io instance for notification delivery
+let ioInstance: Server | null = null;
+
+// Helper to send notification to a user via WebSocket
+export function emitNotification(userId: string, notification: Notification): void {
+  if (!ioInstance) return;
+
+  const sockets = userSockets.get(userId);
+  if (sockets) {
+    for (const socketId of sockets) {
+      ioInstance.to(socketId).emit('notification:new', notification);
+    }
+  }
+}
+
+// Helper to emit unread count update
+export async function emitUnreadCount(userId: string): Promise<void> {
+  if (!ioInstance) return;
+
+  const count = await getUnreadCount(userId);
+  const sockets = userSockets.get(userId);
+  if (sockets) {
+    for (const socketId of sockets) {
+      ioInstance.to(socketId).emit('notification:count', { count });
+    }
+  }
+}
+
 export function setupSocketServer(httpServer: HttpServer): Server {
   const io = new Server(httpServer, {
     cors: {
@@ -22,6 +51,9 @@ export function setupSocketServer(httpServer: HttpServer): Server {
       methods: ['GET', 'POST'],
     },
   });
+
+  // Store io instance for notification delivery
+  ioInstance = io;
 
   // Authentication middleware
   io.use(async (socket: AuthenticatedSocket, next) => {
@@ -215,6 +247,22 @@ export function setupSocketServer(httpServer: HttpServer): Server {
 
         // Broadcast to all participants in the DM
         io.to(`dm:${data.dmId}`).emit('dm:new', message);
+
+        // Send notifications to other participants
+        for (const participantId of dm.participantIds) {
+          if (participantId !== user.id) {
+            const notification = await notifyDM(
+              participantId,
+              user.displayName,
+              data.content.trim(),
+              { dmId: data.dmId, messageId: message.id, senderId: user.id }
+            );
+            if (notification) {
+              emitNotification(participantId, notification);
+              emitUnreadCount(participantId);
+            }
+          }
+        }
       } catch (error) {
         socket.emit('error', { message: 'Failed to send message' });
       }

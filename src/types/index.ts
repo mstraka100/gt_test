@@ -110,6 +110,32 @@ export interface CreateDMInput {
   participantIds: string[];
 }
 
+// Notification types
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'message' | 'mention' | 'dm' | 'channel_invite' | 'system';
+  title: string;
+  body: string;
+  read: boolean;
+  data?: {
+    channelId?: string;
+    dmId?: string;
+    messageId?: string;
+    senderId?: string;
+  };
+  createdAt: Date;
+}
+
+export interface NotificationPreferences {
+  userId: string;
+  mentions: boolean;
+  directMessages: boolean;
+  channelMessages: boolean;
+  sounds: boolean;
+  desktop: boolean;
+}
+
 // WebSocket event types - Client to Server
 export interface ClientToServerEvents {
   'channel:join': (data: { channelId: string }) => void;
