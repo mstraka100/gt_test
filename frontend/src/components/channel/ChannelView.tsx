@@ -4,6 +4,7 @@ import { getChannel, sendMessage } from '../../api/channels';
 import { useSocket } from '../../hooks/useSocket';
 import { MessageList } from '../messages/MessageList';
 import { MessageInput } from '../messages/MessageInput';
+import TetrisGame from '../games/TetrisGame';
 import type { Message } from '../../types';
 
 interface ChannelViewProps {
@@ -44,6 +45,8 @@ export default function ChannelView({ channelId }: ChannelViewProps) {
     emitTyping(channelId);
   };
 
+  const isTetrisChannel = channel?.name?.toLowerCase() === 'tetris';
+
   return (
     <div className="flex-1 flex flex-col">
       {/* Channel header */}
@@ -55,18 +58,30 @@ export default function ChannelView({ channelId }: ChannelViewProps) {
             {channel.description}
           </span>
         )}
+        {isTetrisChannel && (
+          <span className="ml-3 px-2 py-0.5 bg-purple-600 text-white text-xs rounded">
+            GAME
+          </span>
+        )}
       </div>
 
-      {/* Messages */}
-      <MessageList type="channel" id={channelId} newMessages={newMessages} />
+      {isTetrisChannel ? (
+        /* Tetris game */
+        <TetrisGame />
+      ) : (
+        <>
+          {/* Messages */}
+          <MessageList type="channel" id={channelId} newMessages={newMessages} />
 
-      {/* Message input */}
-      <MessageInput
-        placeholder={`Message #${channel?.name || '...'}`}
-        onSend={handleSend}
-        onTyping={handleTyping}
-        disabled={sending}
-      />
+          {/* Message input */}
+          <MessageInput
+            placeholder={`Message #${channel?.name || '...'}`}
+            onSend={handleSend}
+            onTyping={handleTyping}
+            disabled={sending}
+          />
+        </>
+      )}
     </div>
   );
 }
