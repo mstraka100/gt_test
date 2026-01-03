@@ -92,6 +92,8 @@ export function ChatPanel() {
         placeholder={getPlaceholder()}
         onSend={sendMessage}
         onTyping={sendTyping}
+        channelId={currentView === 'channel' ? currentChannelId : undefined}
+        dmId={currentView === 'dm' ? currentDMId : undefined}
       />
     </div>
   );

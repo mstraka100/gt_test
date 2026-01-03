@@ -50,6 +50,7 @@ export interface Message {
   updatedAt: string;
   editedAt?: string;
   user?: User;
+  files?: FileUpload[];
 }
 
 // Direct Message types
@@ -73,6 +74,7 @@ export interface DMMessage {
   updatedAt: string;
   editedAt?: string;
   user?: User;
+  files?: FileUpload[];
 }
 
 // API Response types
@@ -109,6 +111,19 @@ export interface BaseMessage {
 
 // Type alias for any message
 export type AnyMessage = Message | DMMessage;
+
+// File upload types
+export interface FileUpload {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  uploaderId: string;
+  url: string;
+  uploader?: User;
+  createdAt: string;
+}
 
 // Socket event types
 export interface TypingUser {

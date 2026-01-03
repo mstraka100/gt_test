@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../stores/authStore';
-import type { Message, DMMessage, User } from '../types';
+import type { Message, DMMessage, User, FileUpload } from '../types';
 
 interface UseSocketOptions {
   channelId?: string | null;
@@ -151,12 +151,15 @@ export function useSocket({ channelId, dmId }: UseSocketOptions = {}) {
     return () => clearInterval(interval);
   }, []);
 
-  const sendMessage = useCallback((content: string) => {
+  const sendMessage = useCallback((content: string, files?: FileUpload[]) => {
     const socket = socketRef.current;
     if (!socket) return;
 
+    // Include file IDs in the socket message if files are attached
+    const fileIds = files?.map(f => f.id);
+
     if (channelId) {
-      socket.emit('message:send', { channelId, content });
+      socket.emit('message:send', { channelId, content, fileIds });
       const now = Date.now();
       const optimisticMessage: Message = {
         id: 'temp-' + now,
@@ -167,10 +170,11 @@ export function useSocket({ channelId, dmId }: UseSocketOptions = {}) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         user: user || undefined,
+        files,
       };
       setNewMessages((prev) => [...prev, optimisticMessage]);
     } else if (dmId) {
-      socket.emit('dm:send', { dmId, content });
+      socket.emit('dm:send', { dmId, content, fileIds });
       const now = Date.now();
       const optimisticMessage: DMMessage = {
         id: 'temp-' + now,
@@ -181,6 +185,7 @@ export function useSocket({ channelId, dmId }: UseSocketOptions = {}) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         user: user || undefined,
+        files,
       };
       setNewMessages((prev) => [...prev, optimisticMessage]);
     }
