@@ -37,3 +37,33 @@ export interface UpdateUserInput {
   avatarUrl?: string;
   status?: User['status'];
 }
+
+// Channel types
+export interface Channel {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'public' | 'private';
+  creatorId: string;
+  memberIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateChannelInput {
+  name: string;
+  description?: string;
+  type?: 'public' | 'private';
+}
+
+export interface UpdateChannelInput {
+  name?: string;
+  description?: string;
+}
+
+export interface ChannelMember {
+  channelId: string;
+  userId: string;
+  role: 'owner' | 'admin' | 'member';
+  joinedAt: Date;
+}
