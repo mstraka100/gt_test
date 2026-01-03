@@ -15,7 +15,13 @@ export default defineConfig({
       },
       '/socket.io': {
         target: 'http://localhost:3000',
+        changeOrigin: true,
         ws: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('WebSocket proxy error:', err.message);
+          });
+        },
       },
     },
   },

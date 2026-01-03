@@ -16,6 +16,25 @@ import { setupSocketServer } from './socket';
 const app = express();
 const httpServer = createServer(app);
 
+// Handle server errors (including EPIPE)
+httpServer.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EPIPE' || err.code === 'ECONNRESET') {
+    console.log(`Connection error (${err.code}): client disconnected`);
+  } else {
+    console.error('Server error:', err);
+  }
+});
+
+// Handle client errors to prevent crashes from broken connections
+httpServer.on('clientError', (err: NodeJS.ErrnoException, socket) => {
+  if (err.code === 'ECONNRESET' || err.code === 'EPIPE') {
+    socket.destroy();
+  } else {
+    console.error('Client error:', err);
+    socket.destroy();
+  }
+});
+
 // Setup WebSocket server
 const io = setupSocketServer(httpServer);
 

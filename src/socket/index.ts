@@ -51,6 +51,10 @@ export function setupSocketServer(httpServer: HttpServer): Server {
       origin: '*',
       methods: ['GET', 'POST'],
     },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    transports: ['websocket', 'polling'],
+    allowUpgrades: true,
   });
 
   // Store io instance for notification delivery
@@ -82,6 +86,11 @@ export function setupSocketServer(httpServer: HttpServer): Server {
   io.on('connection', async (socket: AuthenticatedSocket) => {
     const user = socket.user!;
     console.log(`User connected: ${user.username} (${socket.id})`);
+
+    // Handle socket errors to prevent crashes
+    socket.on('error', (err) => {
+      console.error(`Socket error for ${user.username}:`, err.message);
+    });
 
     // Track user socket
     if (!userSockets.has(user.id)) {
