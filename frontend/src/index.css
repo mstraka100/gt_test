@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* Slack-like dark theme */
+:root {
+  --slack-bg: #1a1d21;
+  --slack-sidebar: #19171d;
+  --slack-hover: #27242c;
+  --slack-active: #1164a3;
+  --slack-purple: #611f69;
+  --slack-text: #d1d2d3;
+  --slack-text-muted: #ababad;
+  --slack-border: #3d3c40;
+}
+
+body {
+  margin: 0;
+  font-family: 'Lato', 'Slack-Lato', system-ui, sans-serif;
+  background-color: var(--slack-bg);
+  color: var(--slack-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
