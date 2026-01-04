@@ -33,3 +33,14 @@ export async function sendMessage(channelId: string, content: string): Promise<M
   const { data } = await apiClient.post<{ message: Message }>('/messages', { channelId, content });
   return data.message;
 }
+
+export interface CreateChannelInput {
+  name: string;
+  description?: string;
+  type?: 'public' | 'private';
+}
+
+export async function createChannel(input: CreateChannelInput): Promise<Channel> {
+  const { data } = await apiClient.post<{ channel: Channel }>('/channels', input);
+  return data.channel;
+}
