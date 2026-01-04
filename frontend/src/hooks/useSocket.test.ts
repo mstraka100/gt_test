@@ -54,7 +54,10 @@ describe('useSocket', () => {
 
       expect(mockedIo).toHaveBeenCalledWith('/', {
         auth: { token: 'mock-token' },
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
       });
     });
 
