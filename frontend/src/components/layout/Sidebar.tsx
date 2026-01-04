@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useUIStore } from '../../stores/uiStore';
 import { useAuthStore } from '../../stores/authStore';
+import CreateChannelModal from '../channel/CreateChannelModal';
 import type { Channel, DirectMessage, User } from '../../types';
 
 interface SidebarProps {
@@ -11,6 +13,7 @@ interface SidebarProps {
 export default function Sidebar({ channels, dms, currentUser }: SidebarProps) {
   const { currentChannelId, currentDMId, setCurrentChannel, setCurrentDM } = useUIStore();
   const logout = useAuthStore((s) => s.logout);
+  const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
 
   return (
     <div className="w-[260px] bg-[var(--slack-sidebar)] flex flex-col border-r border-[var(--slack-border)]">
@@ -25,6 +28,14 @@ export default function Sidebar({ channels, dms, currentUser }: SidebarProps) {
         <div className="mb-4">
           <div className="px-4 mb-1 flex items-center justify-between">
             <span className="text-[var(--slack-text-muted)] text-sm font-medium">Channels</span>
+            <button
+              onClick={() => setIsCreateChannelOpen(true)}
+              className="text-[var(--slack-text-muted)] hover:text-white hover:bg-[var(--slack-hover)] w-5 h-5 flex items-center justify-center rounded"
+              title="Create channel"
+              aria-label="Create channel"
+            >
+              +
+            </button>
           </div>
           {channels.map((channel) => (
             <button
@@ -82,6 +93,12 @@ export default function Sidebar({ channels, dms, currentUser }: SidebarProps) {
           Logout
         </button>
       </div>
+
+      {/* Create Channel Modal */}
+      <CreateChannelModal
+        isOpen={isCreateChannelOpen}
+        onClose={() => setIsCreateChannelOpen(false)}
+      />
     </div>
   );
 }
