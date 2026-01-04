@@ -29,7 +29,10 @@ export function useSocket({ channelId, dmId }: UseSocketOptions = {}) {
 
     const socket = io('/', {
       auth: { token },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socket.on('connect', () => {
@@ -37,6 +40,11 @@ export function useSocket({ channelId, dmId }: UseSocketOptions = {}) {
     });
 
     socket.on('disconnect', () => {
+      setConnected(false);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('Socket connection error:', err.message);
       setConnected(false);
     });
 
